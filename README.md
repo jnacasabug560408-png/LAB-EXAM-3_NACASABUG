@@ -1,59 +1,63 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# InnEase CRM System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-tenant hotel/property CRM built on Laravel 12. One platform serves a Master (super admin)
+plus three tenants with different feature tiers, and every CRM table is isolated by `tenant_id`.
 
-## About Laravel
+## Local setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate:fresh --seed
+php artisan serve
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Demo accounts
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+All seeded accounts use the password `password`.
 
-## Learning Laravel
+| Perspective | Email | Notes |
+| --- | --- | --- |
+| Master / Super Admin | `master@innease.test` | Tenant selector in the header, global BI, tenant + subscription CRUD |
+| Tenant A – Azure Bay Hotel | `admin@azurebay.test`, `manager@azurebay.test`, `staff@azurebay.test` | Transactions and data collection |
+| Tenant B – Bluewater Suites | `admin@bluewater.test`, `manager@bluewater.test`, `staff@bluewater.test` | BI dashboard and action board |
+| Tenant C – Coral Group of Hotels | `admin@coral.test`, `manager@coral.test`, `staff@coral.test` | Multi-branch, full BI, operational task list |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Tenant isolation
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- `Guests`, `Reservations`, `Feedback`, `Sales`, `Interactions`, `Actions`, `Promotions` and
+  `Branches` all carry `tenant_id` (branch-aware tables also carry `branch_id`).
+- `App\Models\Concerns\BelongsToTenant` adds a global scope driven by `App\Support\TenantContext`,
+  so tenant users only ever read or write their own rows — including route model binding, which
+  returns 404 for another tenant's record.
+- `App\Http\Middleware\ResolveTenant` resolves the tenant from the signed-in user, or from the
+  Master's header selector, and blocks tenant users whose organization is suspended.
+- A Master with no tenant selected gets the global platform perspective.
 
-## Laravel Sponsors
+## Modules
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Area | Route | Highlights |
+| --- | --- | --- |
+| Dashboards | `/dashboard` | Tenant-specific BI; every KPI card drills down (e.g. `/feedback?status=unresolved`) |
+| Master admin | `/master/tenants`, `/master/subscriptions` | Tenant CRUD, activate/suspend, plans, renewal dates, feature access |
+| Transactions | `/reservations`, `/sales` | Reservation CRUD, check-in/check-out (auto room charge), POS entries |
+| Data collection | `/guests`, `/feedback`, `/interactions` | Guest profiles, feedback, inquiries / complaints / special requests |
+| Actions | `/actions` | Open / In Progress / Resolved board, assignment, priorities |
+| Branching (Tenant C) | `/branches` | Branch CRUD plus a header branch filter that scopes all data and analytics |
+| Sales report | `/reports/sales?period=daily\|weekly\|monthly` | Chart plus breakdown and transaction tables |
+| Promotions | `/promotions` | `implemented_by`, required `reason_for_implementation`, `approved_by`, Pending/Approved/Rejected workflow |
 
-### Premium Partners
+Promotions are only active once approved and inside their date range; editing an approved
+promotion sends it back to Pending. Only `master`, `admin` and `manager` roles may approve or
+reject, and rejections require review notes.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+The original library management module remains available under `/library`.
 
-## Contributing
+## Tests
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan test        # tenant isolation, promotion workflow, page smoke tests
+vendor/bin/pint --dirty # code style
+```

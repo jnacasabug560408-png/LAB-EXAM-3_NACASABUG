@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Library Management System</title>
+    <title>Login - InnEase CRM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -159,8 +159,8 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <h1><i class="bi bi-book"></i> LibSys</h1>
-                <p>Library Management System</p>
+                <h1><i class="bi bi-building"></i> InnEase CRM</h1>
+                <p>Multi-tenant hotel CRM platform</p>
             </div>
 
             @if ($errors->any())
