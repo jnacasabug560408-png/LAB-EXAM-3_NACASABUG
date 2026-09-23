@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($validated)) {
             $request->session()->regenerate();
+
             return redirect()->route('dashboard')->with('success', 'Login successful!');
         }
 
@@ -33,7 +35,9 @@ class AuthController extends Controller
 
     public function showRegisterForm()
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'tenants' => Tenant::where('status', 'active')->orderBy('name')->get(),
+        ]);
     }
 
     public function register(Request $request)
@@ -42,12 +46,24 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
+            'tenant_id' => 'required|exists:tenants,id',
         ]);
+
+        $tenant = Tenant::findOrFail($validated['tenant_id']);
+
+        if (! $tenant->isActive()) {
+            return back()->withErrors([
+                'tenant_id' => 'The selected organization is not accepting new accounts.',
+            ])->onlyInput('name', 'email');
+        }
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'tenant_id' => $tenant->id,
+            'role' => 'staff',
+            'is_active' => true,
         ]);
 
         Auth::login($user);

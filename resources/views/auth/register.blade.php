@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Library Management System</title>
+    <title>Register - InnEase CRM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -152,7 +152,7 @@
     <div class="register-container">
         <div class="register-card">
             <div class="register-header">
-                <h1><i class="bi bi-book"></i> LibSys</h1>
+                <h1><i class="bi bi-building"></i> InnEase CRM</h1>
                 <p>Create Your Account</p>
             </div>
 
@@ -186,6 +186,22 @@
                            id="email" name="email" value="{{ old('email') }}" 
                            placeholder="Enter your email" required>
                     @error('email')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label for="tenant_id" class="form-label">Organization</label>
+                    <select class="form-control @error('tenant_id') is-invalid @enderror"
+                            id="tenant_id" name="tenant_id" required>
+                        <option value="">Select your organization</option>
+                        @foreach ($tenants as $tenant)
+                            <option value="{{ $tenant->id }}" @selected(old('tenant_id') == $tenant->id)>
+                                {{ $tenant->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('tenant_id')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
